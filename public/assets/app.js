@@ -11,7 +11,7 @@ function sendPhoneOtp() {
   localStorage.setItem("otp_target", phone);
   localStorage.setItem("otp_type", "phone");
 
-  window.location.href = "validate-otp.html";
+  window.location.href = '/validate-otp';
 }
 
 function sendEmailOtp() {
