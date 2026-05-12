@@ -15,10 +15,21 @@
     <h1>Send OTP to Phone</h1>
     <p class="muted">Enter your phone number to receive a 6-digit code.</p>
 
-    <label>Phone Number</label>
-    <input id="phone" type="tel" placeholder="+63 9XX XXX XXXX">
+    @if(session('error'))
+      <div class="error">{{ session('error') }}</div>
+    @endif
 
-    <button class="btn primary" onclick="sendPhoneOtp()">Send OTP</button>
+    @if(session('success'))
+      <div class="success">{{ session('success') }}</div>
+    @endif
+
+    <form method="POST" action="{{ route('otp.send.sms') }}">
+      @csrf
+      <label>Phone Number</label>
+      <input name="phone" type="tel" placeholder="+63 9XX XXX XXXX">
+      <button class="btn primary" type="submit">Send OTP</button>
+    </form>
+
     <a class="link" href="{{ route('login') }}">Back</a>
   </div>
 </div>
