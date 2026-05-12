@@ -29,11 +29,9 @@ class OtpController extends Controller
             'phone' => 'required|string'
         ]);
 
-        // Generate random 6-digit OTP
         $otp = rand(100000, 999999);
 
-        // Store OTP in session
-        Session::put('otp_code', $otp);
+        Session::put('otp_code', (string)$otp);
         Session::put('otp_target', $request->phone);
         Session::put('otp_method', 'sms');
 
@@ -60,11 +58,9 @@ class OtpController extends Controller
             'email' => 'required|email'
         ]);
 
-        // Generate random 6-digit OTP
         $otp = rand(100000, 999999);
 
-        // Store OTP in session
-        Session::put('otp_code', $otp);
+        Session::put('otp_code', (string)$otp);
         Session::put('otp_target', $request->email);
         Session::put('otp_method', 'email');
 
@@ -94,7 +90,7 @@ class OtpController extends Controller
 
         $sessionOtp = Session::get('otp_code');
 
-        if ($request->otp == $sessionOtp) {
+        if ((string)$request->otp === (string)$sessionOtp) {
             Session::put('otp_verified', true);
             return redirect()->route('mailbox')
                 ->with('success', 'OTP verified successfully!');
