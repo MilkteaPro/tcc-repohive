@@ -15,6 +15,10 @@
     <h1>Send OTP to Email</h1>
     <p class="muted">Enter your email address to receive a 6-digit code.</p>
 
+    @if(session('email_error'))
+      <div class="error">{{ session('email_error') }}</div>
+    @endif
+
     @if(session('error'))
       <div class="error">{{ session('error') }}</div>
     @endif
@@ -23,14 +27,28 @@
       <div class="success">{{ session('success') }}</div>
     @endif
 
-    <form method="POST" action="{{ route('otp.send.email') }}">
+    <form method="POST" action="{{ route('otp.email.send') }}">
       @csrf
-      <label>Email Address</label>
-      <input name="email" type="email" placeholder="example@company.com">
+      <label for="email">Email Address</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        placeholder="example@company.com"
+        autocomplete="email"
+        value="{{ old('email') }}"
+        required
+      >
+
+      @error('email')
+        <p class="field-error">{{ $message }}</p>
+      @enderror
+
       <button class="btn primary" type="submit">Send OTP</button>
     </form>
 
-    <a class="link" href="{{ route('login') }}">Back</a>
+    <a class="link" href="{{ route('otp.phone') }}">Use phone instead</a>
+    <a class="link" href="{{ route('login') }}">Back to hub</a>
   </div>
 </div>
 
