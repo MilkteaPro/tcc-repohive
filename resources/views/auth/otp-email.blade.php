@@ -197,10 +197,6 @@
     <h1>Send OTP to Email</h1>
     <p class="muted">Enter your email address to receive a 6-digit verification code in your inbox.</p>
 
-    @if(session('email_error'))
-      <div class="error">{{ session('email_error') }}</div>
-    @endif
-
     @if(session('error'))
       <div class="error">{{ session('error') }}</div>
     @endif
@@ -209,7 +205,7 @@
       <div class="success">{{ session('success') }}</div>
     @endif
 
-    <form method="POST" action="{{ route('otp.email.send') }}">
+    <form method="POST" action="{{ route('otp.send.email') }}">
       @csrf
       <label for="email">Email Address</label>
       <input
