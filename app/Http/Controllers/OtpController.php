@@ -120,4 +120,33 @@ class OtpController extends Controller
 
         return back()->with('error', 'Invalid OTP. Please try again.');
     }
+
+    public function sendComposedEmail(Request $request)
+    {
+        $request->validate([
+            'to' => 'required|email',
+            'subject' => 'required|string',
+            'body' => 'required|string',
+        ]);
+
+        $baseUrl = config('services.repohive_email.base_url');
+        $token = config('services.repohive_email.token');
+
+        $response = Http::withoutVerifying()
+            ->withToken($token)
+            ->acceptJson()
+            ->timeout(30)
+            ->post(rtrim($baseUrl, '/') . '/email/send', [
+                'to' => $request->to,
+                'subject' => $request->subject,
+                'html' => '<p>' . nl2br(e($request->body)) . '</p>',
+                'text' => $request->body,
+            ]);
+
+        if ($response->successful()) {
+            return response()->json(['success' => true, 'message' => 'Email sent successfully!']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Failed: ' . $response->body()], 500);
+    }
 }

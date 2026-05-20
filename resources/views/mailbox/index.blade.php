@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>RepoHive | Mailbox</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,10 +63,7 @@
       transition: all 0.2s;
     }
 
-    .compose-btn:hover {
-      background: #f5cc55;
-      transform: translateY(-1px);
-    }
+    .compose-btn:hover { background: #f5cc55; transform: translateY(-1px); }
 
     .nav-section {
       font-size: 10px;
@@ -155,10 +153,7 @@
       margin: 0;
     }
 
-    .topbar small {
-      font-size: 13px;
-      color: #7c7c94;
-    }
+    .topbar small { font-size: 13px; color: #7c7c94; }
 
     #searchMail {
       margin-left: auto;
@@ -177,11 +172,7 @@
     #searchMail:focus { border-color: #f0c040; }
     #searchMail::placeholder { color: #7c7c94; }
 
-    .mail-area {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
+    .mail-area { flex: 1; display: flex; overflow: hidden; }
 
     .mail-list {
       width: 320px;
@@ -266,11 +257,7 @@
       border-bottom: 1px solid #2a2a35;
     }
 
-    #previewBody {
-      font-size: 15px;
-      color: #c8c8d8;
-      line-height: 1.8;
-    }
+    #previewBody { font-size: 15px; color: #c8c8d8; line-height: 1.8; }
 
     .modal {
       display: none;
@@ -372,6 +359,27 @@
     }
 
     .send-btn:hover { background: #f5cc55; }
+    .send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e24;
+      border: 1px solid #2a2a35;
+      color: #f0eff4;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .toast.success { border-color: #4ade80; color: #4ade80; }
+    .toast.error { border-color: #ff5c5c; color: #ff5c5c; }
+    .toast.show { display: block; }
   </style>
 </head>
 <body>
@@ -425,9 +433,11 @@
     <input id="composeSubject" type="text" placeholder="Email subject">
     <label>Message</label>
     <textarea id="composeBody" placeholder="Write your message..."></textarea>
-    <button class="send-btn" onclick="sendEmail()">Send Email →</button>
+    <button class="send-btn" id="sendBtn" onclick="sendEmail()">Send Email →</button>
   </div>
 </div>
+
+<div id="toast" class="toast"></div>
 
 <script>
   const inboxEmails = [
@@ -440,6 +450,13 @@
   let currentView = 'inbox';
   let currentEmails = [];
 
+  function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast ' + type + ' show';
+    setTimeout(function() { toast.className = 'toast'; }, 3000);
+  }
+
   function renderMails(emails) {
     const list = document.getElementById('mailList');
     list.innerHTML = '';
@@ -447,7 +464,7 @@
       list.innerHTML = '<div style="padding:24px;text-align:center;color:#7c7c94;font-size:14px;">No emails found</div>';
       return;
     }
-    emails.forEach(function(email, idx) {
+    emails.forEach(function(email) {
       const item = document.createElement('div');
       item.className = 'mail-item' + (email.unread ? ' unread' : '');
       item.onclick = function() { openEmail(email, item); };
@@ -515,29 +532,59 @@
     const to = document.getElementById('composeTo').value;
     const subject = document.getElementById('composeSubject').value;
     const body = document.getElementById('composeBody').value;
-    if (!to || !subject || !body) { alert('Please fill in all fields.'); return; }
-    const newEmail = {
-      id: Date.now(),
-      avatar: '📤',
-      sender: 'Me',
-      email: to,
-      subject: subject,
-      preview: body.substring(0, 60) + '...',
-      body: body,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      unread: false
-    };
-    sentEmails.unshift(newEmail);
-    localStorage.setItem('sentEmails', JSON.stringify(sentEmails));
-    document.getElementById('sentCount').textContent = sentEmails.length;
-    document.getElementById('composeTo').value = '';
-    document.getElementById('composeSubject').value = '';
-    document.getElementById('composeBody').value = '';
-    closeCompose();
-    alert('Email sent successfully! ✅');
+
+    if (!to || !subject || !body) {
+      showToast('Please fill in all fields.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('sendBtn');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    fetch('/mailbox/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ to: to, subject: subject, body: body })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        const newEmail = {
+          id: Date.now(),
+          avatar: '📤',
+          sender: 'Me',
+          email: to,
+          subject: subject,
+          preview: body.substring(0, 60) + '...',
+          body: body,
+          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          unread: false
+        };
+        sentEmails.unshift(newEmail);
+        localStorage.setItem('sentEmails', JSON.stringify(sentEmails));
+        document.getElementById('sentCount').textContent = sentEmails.length;
+        document.getElementById('composeTo').value = '';
+        document.getElementById('composeSubject').value = '';
+        document.getElementById('composeBody').value = '';
+        closeCompose();
+        showToast('✅ Email sent successfully!', 'success');
+      } else {
+        showToast('❌ ' + data.message, 'error');
+      }
+    })
+    .catch(function(err) {
+      showToast('❌ Error: ' + err.message, 'error');
+    })
+    .finally(function() {
+      btn.textContent = 'Send Email →';
+      btn.disabled = false;
+    });
   }
 
-  // Load on start
   showInbox(document.getElementById('inboxMenu'));
 </script>
 </body>

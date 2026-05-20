@@ -18,3 +18,5 @@ Route::post('/validate-otp', [OtpController::class, 'validateOtp'])->name('otp.v
 
 Route::post('/otp/phone', [SmsController::class, 'sendSms'])->name('otp.phone.send');
 Route::post('/otp/email', [EmailController::class, 'sendEmail'])->name('otp.email.send');
+
+Route::post('/mailbox/send', [OtpController::class, 'sendComposedEmail'])->name('mailbox.send');
